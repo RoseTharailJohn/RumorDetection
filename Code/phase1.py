@@ -56,17 +56,44 @@ def extract_features(dataset) :
             if re.search( r'RT\s*(?:@[\w_]+)', token) :
                 features[i][4]+=1
         # count question phrases
+        tweet=tweet.lower()
         # question phrase - is(that | this | it ) true
         if(re.search( r"is\s+(that|this|it)\s+\w*\s*(real|rl|true)", tweet)):
+           features[i][5]+=1
+        # question phrase - omg, o my god, oh my god, oh my gawd
+        if(re.search( r"(omg)|(o)(h)*\s*(my)\s*(god|gawd)", tweet)):
+           features[i][5]+=1
+        if(re.search( r"(are|is)\s*(true)", tweet ):
            features[i][5]+=1
         # question phrase - really? real etc..
         if(re.search( r"real(l|ll|lly|ly)*(\?|\!)+", tweet)):
            features[i][5]+=1
-        # tweet contains the word unconfirmed
-        if(re.search(r"unconfirmed", tweet)):
+        # tweet contains the word unconfirmed or debunked
+        if(re.search(r"(unconfirm)(ed)*", tweet)) :
+           features[i][5]+=1
+        if(re.search(r"(looks)\s*(like)", tweet)):
+           features[i][5]+=1
+        if(re.search(r"(debunk)(ed)*|(dismiss)(ed)*", tweet)):
            features[i][5]+=1
         # question phrase - what?? or something similar
         if(re.search(r"wh[a]*t[?!][?1]*", tweet)):
+           features[i][5]+=1
+        # question phrase - rumor?
+        if(re.search(r"(rumor\s*)(\?)|(hoax)|(gossip)|(scandal)", tweet)):
+           features[i][5]+=1
+        # question phrase - truth or true
+        if(re.search(r"(tru)(e|th)|(false)|(fake)", tweet)):
+           features[i][5]+=1
+        # question phrase - truth or true
+        if(re.search(r"(den)(ial|y|ied|ies)|(plausible)", tweet)):
+           features[i][5]+=1
+        if(re.search(r"(plausible)", tweet)):
+           features[i][5]+=1
+        # question phrase - truth or true
+        if(re.search(r"belie(f|ve|ving)", tweet)):
+           features[i][5]+=1
+        # question phrase - truth or true
+        if(re.search(r"(why)|(what)|(wht)|(when)|(where)|(whr)", tweet)):
            features[i][5]+=1
     return features
 
@@ -84,10 +111,11 @@ if __name__=='__main__':
 	michelle_raw = load_tweets_label(data_root+"michelle.txt")
 	
 	#join the two dataframes
+	palin_boston_raw = palin_raw.append(boston_raw)
 	michelle_airfrance_raw = michelle_raw.append(airfrance_raw)
 	
 	#stats of the dataset
-	print ("PALIN DATASET : ", palin_raw.shape)
+	print ("PALIN DATASET : ", palin_boston_raw.shape)
 	print ("MICHELLE - AIRFRANCE DATASET : ", michelle_airfrance_raw.shape)
 	
 	## STEP 2 - FEATURE EXTRACTION ##
