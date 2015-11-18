@@ -12,10 +12,12 @@ Rose
 2. Changed Retweet's pattern to include RT
 
 Yamin
-1.
+
+1. 
 
 Anushree
-2.
+
+1. 
 
 =============================================================
 Phase 2
