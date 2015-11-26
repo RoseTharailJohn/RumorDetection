@@ -6,6 +6,7 @@ import matplotlib as plt
 import re
 from scipy.stats import entropy
 from collections import defaultdict
+from sklearn.cross_validation import train_test_split
 
 data_root = "../Data/Phase2/"
 regex_str = [
@@ -155,12 +156,13 @@ def get_avg_mention_count(tweets_list):
 # 10 - hashtags - average num of hashtags per tweet in cluster
 # 11 - @mentions - average num of @mentions per signal tweet
 # 12 - @mentions - average num of @mentions per tweet in cluster
+# 13 - True label
 
 def get_features_for_clusters(cluster_tweets_dict) :
-    features = np.zeros((len(cluster_tweets_dict.keys()), 13))
+    features = np.zeros((len(cluster_tweets_dict.keys()), 14))
     i=0
     for cluster_id in cluster_tweets_dict.keys():
-        tweets_in_cluster = cluster_tweets_dict[cluster_id]
+        tweets_in_cluster = cluster_tweets_dict[cluster_id]["tweets"]
         (signal_tweets, ordinary_tweets) = partition_to_signal_and_ordinary(tweets_in_cluster)
         features[i][0] = len(signal_tweets)/len(tweets_in_cluster)
         features[i][1] = entropy_ratio(get_token_list(signal_tweets), get_token_list(tweets_in_cluster))
@@ -175,10 +177,43 @@ def get_features_for_clusters(cluster_tweets_dict) :
         features[i][10] = get_avg_hashtag_count(tweets_in_cluster)
         features[i][11] = get_avg_mention_count(signal_tweets)
         features[i][12] = get_avg_mention_count(tweets_in_cluster)
+        features[i][12] = get_avg_mention_count(tweets_in_cluster)
+        features[i][13] = cluster_tweets_dict[cluster_id]["label"]
         i+=1
     return features
 
 if __name__=='__main__':
-    # fill this later with the right data
-    cluster_tweets_dict=defaultdict()
-    np.save(data_root+"train.npy", get_features_for_clusters(cluster_tweets_dict))
+    
+    # read data
+    data_tweets=pd.read_csv(data_root+"boston_clusters_tweets.txt", sep="\t")
+	data_clusters=pd.read_csv(data_root+"boston_clusters.txt", sep="\s")
+	data_tweets['tId'] = data_tweets['tId'].astype(int)
+	
+	# do join on two files
+	merged_data=data_clusters.merge(data_tweets,on='tId', how="inner")
+	
+	# cluster the tweets
+	clusters_tweets = defaultdict(dict)
+	sample_size = merged_data.shape[1]
+	for i in range(sample_size):
+    	cId = merged_data.iloc[i]['cId']
+    	#label = merged_data.iloc[i]['label']
+    	label=0
+    	tweet = merged_data.iloc[i]['tweet']
+    	if(cId in clusters_tweets.keys()):
+    	    clusters_tweets[cId]['tweets'].append(tweet)
+    	else:
+    	    clusters_tweets[cId]={'tweets':[],'label':label}
+	
+	# featurize
+	all_data_featurized = get_features_for_clusters(cluster_tweets_dict)
+	
+	# split into train and test
+	np.random.shuffle(all_data_featurized)
+	X_train, X_test, Y_train, Y_test = train_test_split(all_data_featurized[:,:13], all_data_featurized[:,13], test_size=0.33, random_state=42)
+	
+	#save train and test files
+    np.save(data_root+"X_train.npy", X_train)
+    np.save(data_root+"Y_train.npy", Y_train)
+    np.save(data_root+"X_test.npy", X_test)
+    np.save(data_root+"Y_test.npy", Y_test)
